@@ -164,6 +164,7 @@
   <script src="pocket-bridge.js"></script>
   <script src="covers.js"></script>
   <script src="app.js"></script>
+  <script src="typewriter-sounds.js"></script>
   <script>
     // the ☰ button stands in for the desktop's hover-to-reveal chapter pane
     // tap ☰ for chapters; long-press it to toggle the on-screen keyboard
@@ -231,6 +232,15 @@
         seg(t('Page'), [['night', t('Night')], ['paper', t('Paper')], ['light', t('Light')]], lib.pageTheme || 'night', (v) => ({ type: 'pageTheme', value: v })) +
         tick(t('Brighter Interface'), document.body.classList.contains('bright'), { type: 'uiBright' }) +
         tick(t('Typewriter scrolling'), st.typewriter, { type: 'typewriter' }) +
+        (window.neoTypeSound ? (() => {
+          const ts = window.neoTypeSound.get();
+          const vols = [[0.3, t('Quiet')], [0.6, t('Medium')], [1, t('Loud')]];
+          const nearest = vols.reduce((a, b) => (Math.abs(b[0] - ts.vol) < Math.abs(a[0] - ts.vol) ? b : a))[0];
+          return `<div class="pm-row"><span class="pm-label">${t('Typewriter sounds')}</span><span class="pm-seg"><button class="${ts.on ? 'on' : ''}" data-act="tsound-on">${onOff(ts.on)}</button></span></div>` +
+            `<div class="pm-row"><span class="pm-label">${t('Sound volume')}</span><span class="pm-seg">` +
+            vols.map(([v, n]) => `<button class="${v === nearest ? 'on' : ''}" data-act="tsound-vol" data-vol="${v}">${n}</button>`).join('') + '</span></div>' +
+            `<div class="pm-row"><span class="pm-label">${t('Bell on Enter')}</span><span class="pm-seg"><button class="${ts.bell ? 'on' : ''}" data-act="tsound-bell">${onOff(ts.bell)}</button></span></div>`;
+        })() : '') +
         // (the dictionary is the desktop's choice, which comes along in library.json)
         tick(t('Spellcheck'), typeof spellOn !== 'undefined' && spellOn, { type: 'spellcheck' }) +
         (script ? '' : tick(t('Flush paragraph') + '  ⇧Enter', st.flush, { type: 'flush' })) +
@@ -254,6 +264,14 @@
       if (!b) return;
       if (b.dataset.act === 'close') { closeMenu(); return; }
       if (b.dataset.act === 'keyboard') { window.pocketToggleSoftKeyboard(); buildMenu(); return; }
+      if (b.dataset.act && b.dataset.act.startsWith('tsound') && window.neoTypeSound) {
+        const ts = window.neoTypeSound;
+        if (b.dataset.act === 'tsound-on') ts.set({ on: !ts.get().on });
+        else if (b.dataset.act === 'tsound-vol') ts.set({ vol: Number(b.dataset.vol) });
+        else if (b.dataset.act === 'tsound-bell') ts.set({ bell: !ts.get().bell });
+        buildMenu();
+        return;
+      }
       if (b.dataset.msg) {
         const msg = JSON.parse(b.dataset.msg);
         send(msg);
