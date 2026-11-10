@@ -165,14 +165,32 @@
   document.addEventListener('keydown', onKeydown, true);
   document.addEventListener('beforeinput', onBeforeInput, true);
 
+  // Desktop NEO: the View → Typewriter Sounds menu. Only where the preload
+  // offers typeSoundState, so Pocket's own menu bridge is left alone.
+  function tell() {
+    const neo = window.neo;
+    if (neo && neo.typeSoundState) neo.typeSoundState(Object.assign({}, cfg));
+  }
+
   window.neoTypeSound = {
     get: () => Object.assign({}, cfg),
     set(patch) {
       Object.assign(cfg, patch);
       if (master) master.gain.value = cfg.vol;
       save();
+      tell();
       // a short sample so a change can be heard right away
       if (cfg.on && ensure()) clack();
     }
   };
+
+  if (window.neo && window.neo.typeSoundState && window.neo.onMenu) {
+    window.neo.onMenu((msg) => {
+      if (!msg) return;
+      if (msg.type === 'typeSound') window.neoTypeSound.set({ on: !cfg.on });
+      else if (msg.type === 'typeSoundVol') window.neoTypeSound.set({ vol: Number(msg.value) });
+      else if (msg.type === 'typeSoundBell') window.neoTypeSound.set({ bell: !cfg.bell });
+    });
+    tell(); // so the menu's ticks match what was saved
+  }
 })();

@@ -39,7 +39,7 @@
     "productName": "NEO",
     "publish": {
       "provider": "github",
-      "owner": "hughhowey",
+      "owner": "TryToTilt",
       "repo": "neo"
     },
     "mac": {

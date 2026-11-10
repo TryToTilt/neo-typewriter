@@ -2708,6 +2708,16 @@ ipcMain.on('script:state', (_e, st) => {
   try { buildMenu(); } catch (err) { logError('menu', err); }
 });
 let typewriterState = false;
+// View → Typewriter Sounds (typewriter-sounds.js tells us its settings)
+let typeSoundState = { on: true, vol: 0.6, bell: true };
+ipcMain.on('typesound:state', (_e, st) => {
+  st = st || {};
+  const vol = Number(st.vol);
+  const next = { on: st.on !== false, vol: vol > 0 && vol <= 1 ? vol : 0.6, bell: st.bell !== false };
+  if (next.on === typeSoundState.on && next.vol === typeSoundState.vol && next.bell === typeSoundState.bell) return;
+  typeSoundState = next;
+  try { buildMenu(); } catch (err) { logError('menu', err); }
+});
 ipcMain.on('poetry:state', (_e, on) => {
   on = !!on;
   if (on === poetryState) return;
@@ -3086,6 +3096,21 @@ function buildMenu() {
           type: 'checkbox',
           checked: typewriterState,
           click: () => sendToWindow({ type: 'typewriter' })
+        },
+        {
+          label: t('Typewriter Sounds'),
+          submenu: [
+            { label: t('Sounds'), type: 'checkbox', checked: typeSoundState.on, click: () => sendToWindow({ type: 'typeSound' }) },
+            { type: 'separator' },
+            ...[[0.3, t('Quiet')], [0.6, t('Medium')], [1, t('Loud')]].map(([value, label]) => ({
+              label,
+              type: 'radio',
+              checked: [0.3, 0.6, 1].reduce((a, b) => (Math.abs(b - typeSoundState.vol) < Math.abs(a - typeSoundState.vol) ? b : a)) === value,
+              click: () => sendToWindow({ type: 'typeSoundVol', value })
+            })),
+            { type: 'separator' },
+            { label: t('Bell on Enter'), type: 'checkbox', checked: typeSoundState.bell, click: () => sendToWindow({ type: 'typeSoundBell' }) }
+          ]
         },
         {
           more: true,
